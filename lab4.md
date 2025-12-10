@@ -93,13 +93,16 @@ CL-USER> (mapcar (add-prev-fn :transform #'1+) '(1 2 3))
 
 ## Лістинг реалізації другої частини завдання
 ```lisp
-(defun add-prev-fn (&key (transform #'identity)) 
-  (let ((prev nil))
+(defun add-prev-fn (&key (transform #'identity))
+  (let ((prev-transformed nil)
+        (have-prev nil))
     (lambda (current)
-      (let ((result (cons (funcall transform current) 
-                          (if prev (funcall transform prev)))))
-        (setf prev current) 
-        result))))
+      (let ((cur-t (funcall transform current)))
+        (prog1
+            (cons cur-t (if have-prev prev-transformed nil))
+          (setf prev-transformed cur-t
+                have-prev t))))))
+
 ```
 
 ### Тестові набори та утиліти другої частини
@@ -115,7 +118,8 @@ CL-USER> (mapcar (add-prev-fn :transform #'1+) '(1 2 3))
   (check-add-prev-fn "test 2" '(42) '((42 . NIL)))
   (check-add-prev-fn "test 3" '() '())
   (check-add-prev-fn "test 4" '(1 2 3) '((2 . NIL) (3 . 2) (4 . 3)) :transform #'1+)
-  (check-add-prev-fn "test 5" '(1 2 3) '((2 . NIL) (4 . 2) (6 . 4)) :transform #'(lambda (x) (* 2 x))))
+  (check-add-prev-fn "test 5" '(1 2 3) '((2 . NIL) (4 . 2) (6 . 4)) :transform #'(lambda (x) (* 2 x)))
+  (check-add-prev-fn "test 6" '(nil nil nil) '((NIL . NIL) (NIL . NIL) (NIL . NIL)))) 
 ```
 
 ### Тестування другої частини
@@ -126,5 +130,6 @@ passed... test 2
 passed... test 3
 passed... test 4
 passed... test 5
+passed... test 6
 NIL
 ```
